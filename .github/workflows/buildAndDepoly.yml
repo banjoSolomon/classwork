@@ -38,7 +38,7 @@ jobs:
         run: docker build -t solomon11/devops:latest .
 
       - name: Push Docker image to Docker Hub
-        run: docker push solomon11/devops:latest
+        run: docker push solomon11/classwork:latest
 
       - name: Deploy to AWS EC2
         env:
@@ -51,5 +51,5 @@ jobs:
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
             sudo docker pull solomon11/devops:latest
-            sudo docker run -d -p 9090:8081 solomon11/devops:latest
+            sudo docker run -d -p 9090:8081 solomon11/classwork:latest
           EOF
