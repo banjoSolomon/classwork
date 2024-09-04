@@ -35,7 +35,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t solomon11/devops:latest .
+        run: docker build -t solomon11/classwork:latest .
 
       - name: Push Docker image to Docker Hub
         run: docker push solomon11/devops:latest
@@ -50,6 +50,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
-            sudo docker pull solomon11/devops:latest
-            sudo docker run -d -p 9090:8081 solomon11/devops:latest
+            sudo docker pull solomon11/classwork:latest
+            sudo docker run -d -p 9090:8081 solomon11/classwork:latest
           EOF
+#          2
