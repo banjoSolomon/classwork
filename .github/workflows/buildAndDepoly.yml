@@ -38,7 +38,7 @@ jobs:
         run: docker build -t solomon11/classwork:latest .
 
       - name: Push Docker image to Docker Hub
-        run: docker push solomon11/devops:latest
+        run: docker push solomon11/classwork:latest
 
       - name: Deploy to AWS EC2
         env:
