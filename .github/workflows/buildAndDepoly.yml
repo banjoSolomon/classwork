@@ -50,12 +50,15 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
+            # Generate a unique container name
+            CONTAINER_NAME="my-container-$(date +%s)"
+
             # Stop and remove any existing container
-            if [ "$(sudo docker ps -q -f name=my-container)" ]; then
-              echo "Stopping existing container..."
-              sudo docker stop my-container
-              echo "Removing existing container..."
-              sudo docker rm my-container
+            if [ "$(sudo docker ps -q -f name=my-container-*)" ]; then
+              echo "Stopping existing containers..."
+              sudo docker stop $(sudo docker ps -q -f name=my-container-*)
+              echo "Removing existing containers..."
+              sudo docker rm $(sudo docker ps -a -q -f name=my-container-*)
             fi
 
             # Remove any previous image if needed
@@ -74,7 +77,7 @@ jobs:
             echo "Pulling new image..."
             sudo docker pull solomon11/devops:latest
 
-            # Run the new container
+            # Run the new container with a unique name
             echo "Running new container..."
-            sudo docker run -d --name my-container -p 9090:8081 solomon11/devops:latest
+            sudo docker run -d --name $CONTAINER_NAME -p 9090:8081 solomon11/devops:latest
           EOF
