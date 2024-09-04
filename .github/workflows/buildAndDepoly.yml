@@ -47,6 +47,7 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > aws_key.pem
           chmod 600 aws_key.pem
+          ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
             docker pull solomon11/devops:latest
             docker run -d -p 9090:8081 solomon11/devops:latest
