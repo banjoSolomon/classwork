@@ -48,13 +48,6 @@ jobs:
           echo "$PRIVATE_KEY" > aws_key.pem
           chmod 600 aws_key.pem
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
-            # Stop and remove any existing container with the name 'my-app'
-            docker stop my-app || true
-            docker rm my-app || true
-
-            # Pull the latest Docker image
             docker pull solomon11/devops:latest
-
-            # Run the new container
-            docker run -d --name my-app -p 9090:8081 solomon11/devops:latest
+            docker run -d -p 9090:8081 solomon11/devops:latest
           EOF
