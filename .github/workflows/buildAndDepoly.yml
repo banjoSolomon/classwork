@@ -1,32 +1,68 @@
-- name: Deploy to AWS EC2
-  env:
-    PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
-    INSTANCE_IP: ${{ secrets.AWS_INSTANCE_IP }}
-  run: |
-    echo "$PRIVATE_KEY" > aws_key.pem  
-    chmod 600 aws_key.pem  
-    mkdir -p ~/.ssh  
-    ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts  
-    ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'  
-      # Ensure user has permissions for Docker commands  
-      sudo usermod -aG docker ubuntu  
-    
-        
-      if [ "$(sudo docker ps -q -f name=sweet_)" ]; then  
-        sudo docker stop sweet_  
-        sudo docker rm sweet_  
-      fi  
-    
-      # Alternatively, find and remove any existing container using port 9090  
-      CONTAINER_ID=$(sudo lsof -t -i:9090)  
-      if [ -n "$CONTAINER_ID" ]; then  
-        sudo docker stop $CONTAINER_ID  
-        sudo docker rm $CONTAINER_ID  
-      fi  
-    
-      # Pull the latest image  
-      sudo docker pull solomon11/devops:latest  
-    
-      # Run the new container  
-      sudo docker run -d --name sweet_ -p 9090:8081 solomon11/devops:latest  
-    EOF
+name: Deploy Dockerhub
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Restore Maven Package
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('/*.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-  
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        run: docker build -t solomon11/devops:latest .
+
+      - name: Push Docker image to Docker Hub
+        run: docker push solomon11/devops:latest
+
+      - name: Deploy to AWS EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
+          INSTANCE_IP: ${{ secrets.AWS_INSTANCE_IP }}
+        run: |
+          echo "$PRIVATE_KEY" > aws_key.pem  
+          chmod 600 aws_key.pem  
+          mkdir -p ~/.ssh  
+          ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts  
+          ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'  
+            # Ensure user has permissions for Docker commands  
+            sudo usermod -aG docker ubuntu  
+          
+            # Find and remove any existing container using port 9090  
+            CONTAINER_ID=$(sudo lsof -t -i:9090)  
+            if [ -n "$CONTAINER_ID" ]; then  
+              sudo docker stop $CONTAINER_ID  
+              sudo docker rm $CONTAINER_ID  
+            fi  
+          
+            # Pull the latest image  
+            sudo docker pull solomon11/devops:latest  
+          
+            # Run the new container  
+            sudo docker run -d --name sweet_ -p 9090:8081 solomon11/devops:latest  
+          EOF
