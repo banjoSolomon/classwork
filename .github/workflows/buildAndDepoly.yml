@@ -24,9 +24,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/*.xml') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('/*.xml') }}
           restore-keys: |
-            ${{ runner.os }}-maven-
+            ${{ runner.os }}-maven-  
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -45,39 +45,20 @@ jobs:
           PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
           INSTANCE_IP: ${{ secrets.AWS_INSTANCE_IP }}
         run: |
-          echo "$PRIVATE_KEY" > aws_key.pem
-          chmod 600 aws_key.pem
-          mkdir -p ~/.ssh
-          ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
-          ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
-            # Generate a unique container name
-            CONTAINER_NAME="my-container-$(date +%s)"
-
-            # Stop and remove any existing container
-            if [ "$(sudo docker ps -q -f name=my-container-*)" ]; then
-              echo "Stopping existing containers..."
-              sudo docker stop $(sudo docker ps -q -f name=my-container-*)
-              echo "Removing existing containers..."
-              sudo docker rm $(sudo docker ps -a -q -f name=my-container-*)
-            fi
-
-            # Remove any previous image if needed
-            if [ "$(sudo docker images -q solomon11/devops:latest)" ]; then
-              echo "Removing old image..."
-              sudo docker rmi -f solomon11/devops:latest || true
-            fi
-
-            # Check for and free the port if needed
-            if [ "$(sudo lsof -t -i:9090)" ]; then
-              echo "Freeing port 9090..."
-              sudo fuser -k 9090/tcp || true
-            fi
-
-            # Pull the new image
-            echo "Pulling new image..."
-            sudo docker pull solomon11/devops:latest
-
-            # Run the new container with a unique name
-            echo "Running new container..."
-            sudo docker run -d --name $CONTAINER_NAME -p 9090:8081 solomon11/devops:latest
+          echo "$PRIVATE_KEY" > aws_key.pem  
+          chmod 600 aws_key.pem  
+          mkdir -p ~/.ssh  
+          ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts  
+          ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'  
+            # Stop and remove any existing container  
+            if [ "$(docker ps -q -f name=sweet_)" ]; then  
+              sudo docker stop sweet_  
+              sudo docker rm sweet_  
+            fi  
+          
+            # Pull the latest image  
+            sudo docker pull solomon11/devops:latest  
+          
+            # Run the new container  
+            sudo docker run -d --name sweet_ -p 9090:8081 solomon11/devops:latest  
           EOF
