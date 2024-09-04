@@ -2,7 +2,6 @@ name: Deploy Dockerhub
 
 on:
   push:
-
     branches:
       - dev
 
@@ -25,7 +24,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('/*.xml') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/*.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
 
@@ -51,6 +50,20 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
+            # Stop and remove any existing container
+            if [ "$(sudo docker ps -q -f name=my-container)" ]; then
+              sudo docker stop my-container
+              sudo docker rm my-container
+            fi
+
+            # Remove any previous image if needed
+            if [ "$(sudo docker images -q solomon11/devops:latest)" ]; then
+              sudo docker rmi solomon11/devops:latest || true
+            fi
+
+            # Pull the new image
             sudo docker pull solomon11/devops:latest
-            sudo docker run -d -p 9090:8081 solomon11/devops:latest
+
+            # Run the new container
+            sudo docker run -d --name my-container -p 9090:8081 solomon11/devops:latest
           EOF
