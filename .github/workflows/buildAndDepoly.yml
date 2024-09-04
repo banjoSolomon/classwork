@@ -24,7 +24,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('/*.xml') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/*.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-  
 
@@ -53,16 +53,21 @@ jobs:
             # Ensure user has permissions for Docker commands  
             sudo usermod -aG docker ubuntu  
           
-            # Find and remove any existing container using port 9090  
-            CONTAINER_ID=$(sudo lsof -t -i:9090)  
+            # Define a unique container name
+            CONTAINER_NAME="my-container-$(date +%s)"
+          
+            # Find and remove any existing container using the port
+            CONTAINER_ID=$(sudo docker ps -q -f name=my-container-*)
             if [ -n "$CONTAINER_ID" ]; then  
+              echo "Stopping and removing old container..."
               sudo docker stop $CONTAINER_ID  
               sudo docker rm $CONTAINER_ID  
             fi  
           
-            # Pull the latest image  
+            # Pull the latest image
             sudo docker pull solomon11/devops:latest  
           
-            # Run the new container  
-            sudo docker run -d --name sweet_ -p 9090:8081 solomon11/devops:latest  
+            # Run the new container with a unique name
+            echo "Running new container with name $CONTAINER_NAME..."
+            sudo docker run -d --name $CONTAINER_NAME -p 9090:8081 solomon11/devops:latest  
           EOF
