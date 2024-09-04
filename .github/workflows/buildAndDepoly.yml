@@ -58,7 +58,12 @@ jobs:
 
             # Remove any previous image if needed
             if [ "$(sudo docker images -q solomon11/devops:latest)" ]; then
-              sudo docker rmi solomon11/devops:latest || true
+              sudo docker rmi -f solomon11/devops:latest || true
+            fi
+
+            # Check for and free the port if needed
+            if [ "$(sudo lsof -i:9090)" ]; then
+              sudo fuser -k 9090/tcp || true
             fi
 
             # Pull the new image
