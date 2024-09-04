@@ -35,7 +35,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t solomon11/devops:latest .
+        run: docker build -t solomon11/classwork:latest .
 
       - name: Push Docker image to Docker Hub
         run: docker push solomon11/classwork:latest
