@@ -50,13 +50,14 @@ jobs:
           mkdir -p ~/.ssh  
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts  
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'  
-            # Ensure user has permission for Docker commands  
+            # Ensure user has permissions for Docker commands  
             sudo usermod -aG docker ubuntu  
           
-            # Stop and remove any existing container if running  
-            if [ "$(sudo docker ps -q -f name=sweet_)" ]; then  
-              sudo docker stop sweet_  
-              sudo docker rm sweet_  
+            # Find and remove any existing container using port 9090  
+            CONTAINER_ID=$(sudo lsof -t -i:9090)  
+            if [ -n "$CONTAINER_ID" ]; then  
+              sudo docker stop $CONTAINER_ID  
+              sudo docker rm $CONTAINER_ID  
             fi  
           
             # Pull the latest image  
