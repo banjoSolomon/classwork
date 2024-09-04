@@ -52,23 +52,29 @@ jobs:
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
             # Stop and remove any existing container
             if [ "$(sudo docker ps -q -f name=my-container)" ]; then
+              echo "Stopping existing container..."
               sudo docker stop my-container
+              echo "Removing existing container..."
               sudo docker rm my-container
             fi
 
             # Remove any previous image if needed
             if [ "$(sudo docker images -q solomon11/devops:latest)" ]; then
+              echo "Removing old image..."
               sudo docker rmi -f solomon11/devops:latest || true
             fi
 
             # Check for and free the port if needed
-            if [ "$(sudo lsof -i:9090)" ]; then
+            if [ "$(sudo lsof -t -i:9090)" ]; then
+              echo "Freeing port 9090..."
               sudo fuser -k 9090/tcp || true
             fi
 
             # Pull the new image
+            echo "Pulling new image..."
             sudo docker pull solomon11/devops:latest
 
             # Run the new container
+            echo "Running new container..."
             sudo docker run -d --name my-container -p 9090:8081 solomon11/devops:latest
           EOF
