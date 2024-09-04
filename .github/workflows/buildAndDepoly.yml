@@ -11,7 +11,7 @@
       # Ensure user has permissions for Docker commands  
       sudo usermod -aG docker ubuntu  
     
-      # Find and remove any existing container named sweet_  
+        
       if [ "$(sudo docker ps -q -f name=sweet_)" ]; then  
         sudo docker stop sweet_  
         sudo docker rm sweet_  
