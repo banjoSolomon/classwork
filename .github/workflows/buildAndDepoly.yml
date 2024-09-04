@@ -40,16 +40,21 @@ jobs:
       - name: Push Docker image to Docker Hub
         run: docker push solomon11/classwork:latest
 
+      - name: Check AWS_PRIVATE_KEY length
+        run: |
+          echo "${{ secrets.AWS_PRIVATE_KEY }}" | wc -c
+
       - name: Deploy to AWS EC2
         env:
           PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
           INSTANCE_IP: ${{ secrets.AWS_INSTANCE_IP }}
         run: |
-          echo "$PRIVATE_KEY" > aws_key.pem
-          chmod 600 aws_key.pem
+          echo "$PRIVATE_KEY" > aws_key.pem || { echo "Failed to write PRIVATE_KEY to file"; exit 1; }
+          chmod 600 aws_key.pem || { echo "Failed to set permissions on aws_key.pem"; exit 1; }
           mkdir -p ~/.ssh
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
+          echo "Attempting SSH connection..."
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
-            sudo docker pull solomon11/devops:latest
+            sudo docker pull solomon11/classwork:latest
             sudo docker run -d -p 9090:8081 solomon11/classwork:latest
           EOF
