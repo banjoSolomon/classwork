@@ -44,14 +44,27 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
           INSTANCE_IP: ${{ secrets.AWS_INSTANCE_IP }}
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
         run: |
           echo "$PRIVATE_KEY" > aws_key.pem
           chmod 600 aws_key.pem
           mkdir -p ~/.ssh
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
+            # Export the environment variables
+            export DB_URL=${{ secrets.DB_URL }}
+            export DB_USER=${{ secrets.DB_USER }}
+            export DB_PASS=${{ secrets.DB_PASS }}
+
+            # Pull the latest Docker image
             sudo docker pull solomon11/classwork:latest
-            sudo docker run -d -p 9090:8081 solomon11/classwork:latest
+
+            # Run Docker container with environment variables
+            sudo docker run -d \
+              -e DB_URL=$DB_URL \
+              -e DB_USER=$DB_USER \
+              -e DB_PASS=$DB_PASS \
+              -p 9090:8081 solomon11/classwork:latest
           EOF
-#          2
-#1
