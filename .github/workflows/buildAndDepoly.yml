@@ -52,19 +52,19 @@ jobs:
           chmod 600 aws_key.pem
           mkdir -p ~/.ssh
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
-          ssh -i aws_key.pem ubuntu@$INSTANCE_IP << EOF
+          ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
             # Export the environment variables
-            export DB_URL=$DB_URL
-            export DB_USER=$DB_USER
-            export DB_PASS=$DB_PASS
+            export DB_URL=${DB_URL}
+            export DB_USER=${DB_USER}
+            export DB_PASS=${DB_PASS}
 
             # Pull the latest Docker image
             sudo docker pull solomon11/classwork:latest
 
             # Run Docker container with environment variables
             sudo docker run -d \
-              -e DATABASE_URL=$DB_URL \
-              -e DATABASE_USERNAME=$DB_USER \
-              -e DATABASE_PASSWORD=$DB_PASS \
+              -e DATABASE_URL=${DB_URL} \
+              -e DATABASE_USERNAME=${DB_USER} \
+              -e DATABASE_PASSWORD=${DB_PASS} \
               -p 9090:9090 solomon11/classwork:latest
           EOF
