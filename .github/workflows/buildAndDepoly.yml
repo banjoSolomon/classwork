@@ -1,29 +1,57 @@
-version: '3.8'
+name: Deploy Dockerhub
 
-services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: my_postgres_db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Solomon11
-      POSTGRES_DB: dev_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+on:
+  push:
+    branches:
+      - dev
 
-  app:
-    image: solomon11/devops:latest
-    container_name: my_app
-    environment:
-      SPRING_DATASOURCE_URL: ${DATABASE_URL:-jdbc:postgresql://postgres:5432/dev_db}
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: Solomon11
-    depends_on:
-      - postgres
-    ports:
-      - "9090:8081"
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
 
-volumes:
-  postgres_data:
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Restore Maven Package
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('/*.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        run: docker build -t solomon11/classwork:latest .
+
+      - name: Push Docker image to Docker Hub
+        run: docker push solomon11/classwork:latest
+
+      - name: Deploy to AWS EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
+          INSTANCE_IP: ${{ secrets.AWS_INSTANCE_IP }}
+        run: |
+          echo "$PRIVATE_KEY" > aws_key.pem
+          chmod 600 aws_key.pem
+          mkdir -p ~/.ssh
+          ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
+          ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
+            sudo docker pull solomon11/classwork:latest
+            sudo docker run -d -p 9090:8081solomon11/classwork:latest
+          EOF
+#          2
+#1
