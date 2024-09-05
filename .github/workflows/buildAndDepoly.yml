@@ -44,9 +44,9 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
           INSTANCE_IP: ${{ secrets.AWS_INSTANCE_IP }}
-          DB_URL: ${{ secrets.DB_URL }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASS: ${{ secrets.DB_PASS }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
         run: |
           echo "$PRIVATE_KEY" > aws_key.pem
           chmod 600 aws_key.pem
@@ -54,17 +54,17 @@ jobs:
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
             # Export the environment variables
-            export DB_URL=${DB_URL}
-            export DB_USER=${DB_USER}
-            export DB_PASS=${DB_PASS}
+            export DATABASE_URL=${DATABASE_URL}
+            export DATABASE_USERNAME=${DATABASE_USERNAME}
+            export DATABASE_PASSWORD=${DATABASE_PASSWORD}
 
             # Pull the latest Docker image
             sudo docker pull solomon11/classwork:latest
 
             # Run Docker container with environment variables
             sudo docker run -d \
-              -e DATABASE_URL=${DB_URL} \
-              -e DATABASE_USERNAME=${DB_USER} \
-              -e DATABASE_PASSWORD=${DB_PASS} \
+              -e DATABASE_URL=${DATABASE_URL} \
+              -e DATABASE_USERNAME=${DATABASE_USERNAME} \
+              -e DATABASE_PASSWORD=${DATABASE_PASSWORD} \
               -p 9090:9090 solomon11/classwork:latest
           EOF
