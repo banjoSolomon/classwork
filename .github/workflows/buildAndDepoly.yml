@@ -66,5 +66,5 @@ jobs:
               -e DB_URL=$DB_URL \
               -e DB_USER=$DB_USER \
               -e DB_PASS=$DB_PASS \
-              -p 9090:8081 solomon11/classwork:latest
+              -p 9090:5432 solomon11/classwork:latest
           EOF
