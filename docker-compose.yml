@@ -14,16 +14,16 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   app:
-    image: solomon11/devops:latest
+    image: solomon11/classwork:latest
     container_name: my_app
     environment:
       SPRING_DATASOURCE_URL: ${DATABASE_URL:-jdbc:postgresql://postgres:5432/dev_db}
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: Solomon11
     depends_on:
-      - postgres
+      - postgresa
     ports:
-      - "9090:8081"
+      - "8080:8080"
 
 volumes:
   postgres_data:
