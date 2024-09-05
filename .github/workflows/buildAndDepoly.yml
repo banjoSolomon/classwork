@@ -57,11 +57,11 @@ jobs:
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
 
           # SSH into the EC2 instance and perform deployment
-          ssh -i aws_key.pem ubuntu@$INSTANCE_IP << EOF
+          ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
             # Export the environment variables
-            export DATABASE_URL=${DATABASE_URL}
-            export DATABASE_USERNAME=${DATABASE_USERNAME}
-            export DATABASE_PASSWORD=${DATABASE_PASSWORD}
+            export DATABASE_URL="${DATABASE_URL}"
+            export DATABASE_USERNAME="${DATABASE_USERNAME}"
+            export DATABASE_PASSWORD="${DATABASE_PASSWORD}"
 
             # Pull the latest Docker image
             sudo docker pull solomon11/classwork:latest
@@ -72,8 +72,8 @@ jobs:
 
             # Run Docker container with environment variables
             sudo docker run -d \
-              -e DATABASE_URL=${DATABASE_URL} \
-              -e DATABASE_USERNAME=${DATABASE_USERNAME} \
-              -e DATABASE_PASSWORD=${DATABASE_PASSWORD} \
+              -e DATABASE_URL="${DATABASE_URL}" \
+              -e DATABASE_USERNAME="${DATABASE_USERNAME}" \
+              -e DATABASE_PASSWORD="${DATABASE_PASSWORD}" \
               -p 9090:9090 solomon11/classwork:latest
           EOF
