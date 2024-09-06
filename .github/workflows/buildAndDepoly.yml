@@ -50,6 +50,6 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
-            sudo docker pull solomon11/classwork:latest
-            sudo docker run -d -p 9090:8080 solomon11/classwork:latest
+          sudo docker pull solomon11/classwork:latest
+          sudo docker run -d --env-file=.env -p 9090 --name classwork-container solomon11/classwork:latest
           EOF

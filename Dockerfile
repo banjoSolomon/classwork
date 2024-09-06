@@ -6,4 +6,4 @@ FROM openjdk:17
 COPY --from=build target/*.jar classwork.jar
 
 # Removed the problematic backtick
-ENTRYPOINT ["java", "-jar", "-Dserver.port=8080", "classwork.jar"]
+ENTRYPOINT ["java", "-jar", "-Dserver.port=9090", "classwork.jar"]
