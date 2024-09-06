@@ -23,6 +23,5 @@ public class ClientServiceImpl implements ClientService{
         response.setUsername(client.getUsername());
         response.setMessage("User successfully registered");
         return response;
-
     }
 }
