@@ -50,6 +50,13 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
+          # Stop and remove any existing container with the same name
+          if [ "$(docker ps -aq -f name=olodo-class-container)" ]; then
+            docker stop olodo-class-container
+            docker rm olodo-class-container
+          fi
+          
+          # Pull the latest image and run it
           sudo docker pull solomon11/classwork:latest
           sudo docker run -d --env-file=.env --name olodo-class-container solomon11/classwork:latest
           EOF
