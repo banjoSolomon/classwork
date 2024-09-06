@@ -49,7 +49,14 @@ jobs:
           chmod 600 aws_key.pem
           mkdir -p ~/.ssh
           ssh-keyscan -H $INSTANCE_IP >> ~/.ssh/known_hosts
+          
+          # Copy the .env file to EC2 instance
           scp -i aws_key.pem .env ubuntu@$INSTANCE_IP:/home/ubuntu/.env
+
+          # Verify .env file exists on EC2 instance
+          ssh -i aws_key.pem ubuntu@$INSTANCE_IP "ls -la /home/ubuntu/.env"
+
+          # Pull and run the Docker container on EC2
           ssh -i aws_key.pem ubuntu@$INSTANCE_IP << 'EOF'
           sudo docker pull solomon11/classwork:latest
           sudo docker stop classwk-container || true
