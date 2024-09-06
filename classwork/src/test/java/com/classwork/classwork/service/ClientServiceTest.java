@@ -24,6 +24,5 @@ public class ClientServiceTest {
         assertEquals("username", response.getUsername());
         assertNotNull(response.getClientId());
         assertEquals("User successfully registered", response.getMessage());
-
     }
 }
