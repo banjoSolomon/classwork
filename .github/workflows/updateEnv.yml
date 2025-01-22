@@ -23,32 +23,34 @@ jobs:
       # Authenticate with GitHub CLI
       - name: Authenticate with GitHub CLI
         env:
-          GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.G_TOKEN }}  # Ensure that G_TOKEN secret is available
         run: |
           gh auth status || { echo "Authentication failed"; exit 1; }
 
-      # Update secrets from application.properties
-      - name: Update Secrets from application.properties
-        env:
-          APP_PROPERTIES_PATH: "src/main/resources/application.properties" # Corrected the path
+      # Check if the application.properties file exists
+      - name: Ensure application.properties file exists
         run: |
-          # Ensure the application.properties file exists at the specified path
-          if [ ! -f "$APP_PROPERTIES_PATH" ]; then
-            echo "Error: application.properties file not found at $APP_PROPERTIES_PATH"
+          if [ ! -f "src/main/resources/application.properties" ]; then
+            echo "Error: application.properties file not found"
             exit 1
           fi
 
-          # Read and process variables from application.properties
+      # Extract variables from application.properties and update GitHub secrets
+      - name: Extract and Update Secrets from application.properties
+        run: |
+          # Set the path to the application.properties file
+          APP_PROPERTIES_PATH="src/main/resources/application.properties"
+
+          # Read the application.properties and extract key-value pairs
           while IFS='=' read -r key value; do
             # Skip empty lines or comments
             if [ -n "$key" ] && [ -n "$value" ] && [[ $key != \#* ]]; then
-              # Check if the secret already exists
-              if gh secret list | grep -q "$key"; then
-                echo "Updating existing secret: $key"
-                echo -n "$value" | gh secret set "$key"
-              else
-                echo "Adding new secret: $key"
-                echo -n "$value" | gh secret set "$key"
-              fi
+              # Strip leading/trailing whitespace
+              key=$(echo "$key" | xargs)
+              value=$(echo "$value" | xargs)
+
+              # Update the secret in GitHub (using GitHub CLI)
+              echo "Updating secret: $key"
+              echo -n "$value" | gh secret set "$key"
             fi
           done < "$APP_PROPERTIES_PATH"
