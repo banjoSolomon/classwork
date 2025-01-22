@@ -1,0 +1,54 @@
+name: Update Environment Variables in GitHub Secrets
+
+on:
+  push:
+    branches:
+      - dev  # Trigger on push to the 'main' branch (change as needed)
+
+jobs:
+  update-secrets:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository to get access to the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up GitHub CLI tool to interact with GitHub API
+      - name: Set up GitHub CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /usr/share/keyrings/github-archive-keyring.gpg > /dev/null
+          sudo apt update
+          sudo apt install gh
+
+      # Authenticate with GitHub CLI using the provided GitHub token
+      - name: Authenticate with GitHub CLI
+        run: gh auth login --with-token <<< "${{ secrets.G_TOKEN }}"
+
+      # Read environment variables from application.properties and update GitHub Secrets
+      - name: Add or update environment variables in GitHub Secrets
+        run: |
+          # Read the application.properties file
+          APP_PROPERTIES_PATH="path/to/your/application.properties"  # Set the path to your application.properties file
+
+          # Extract the environment variable name and value from the application.properties file
+          NEW_VAR_NAME=$(grep -E '^MY_SECRET_VAR=' $APP_PROPERTIES_PATH | cut -d'=' -f1)
+          NEW_VAR_VALUE=$(grep -E '^MY_SECRET_VAR=' $APP_PROPERTIES_PATH | cut -d'=' -f2)
+
+          if [ -z "$NEW_VAR_NAME" ] || [ -z "$NEW_VAR_VALUE" ]; then
+            echo "Environment variable not found in application.properties."
+          
+            exit 1
+          fi
+
+          # Check if the secret exists in GitHub Secrets
+          SECRET_EXISTS=$(gh secret list --repo ${{ github.repository }} | grep -q $NEW_VAR_NAME && echo "true" || echo "false")
+
+          # If the secret exists, update it; otherwise, add it as a new secret
+          if [ "$SECRET_EXISTS" == "true" ]; then
+            echo "Secret exists, updating it..."
+            gh secret set $NEW_VAR_NAME --body "$NEW_VAR_VALUE" --repo ${{ github.repository }}
+          else
+            echo "Adding new secret..."
+            gh secret set $NEW_VAR_NAME --body "$NEW_VAR_VALUE" --repo ${{ github.repository }}
+          fi
