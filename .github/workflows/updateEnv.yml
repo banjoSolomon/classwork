@@ -3,7 +3,7 @@ name: Update Environment Variables in GitHub Secrets
 on:
   push:
     branches:
-      - dev  # Adjust branch as needed
+      - dev  # Adjust to match the relevant branch
 
 jobs:
   update-secrets:
@@ -17,8 +17,9 @@ jobs:
       # Install GitHub CLI
       - name: Set up GitHub CLI
         run: |
-          sudo apt-get update
+          sudo apt-get update -y
           sudo apt-get install -y gh
+          gh --version
 
       # Authenticate with GitHub CLI
       - name: Authenticate with GitHub CLI
@@ -30,23 +31,25 @@ jobs:
       # Extract and update environment variables from application.properties
       - name: Update Secrets from application.properties
         env:
-          APP_PROPERTIES_PATH: "./src/main/resources/application.properties" # Update this path
+          APP_PROPERTIES_PATH: "./src/main/resources/application.properties" # Adjust this path
         run: |
+          # Check if application.properties exists
           if [ ! -f "$APP_PROPERTIES_PATH" ]; then
             echo "Error: application.properties file not found at $APP_PROPERTIES_PATH"
             exit 1
           fi
 
-          # Extract all variables from application.properties
+          # Process each line in the properties file
           while IFS='=' read -r key value; do
-            if [ -n "$key" ] && [ -n "$value" ] && [[ $key != \#* ]]; then
+            # Skip empty lines and comments
+            if [[ -n "$key" && -n "$value" && $key != \#* ]]; then
               # Check if the secret already exists
-              if gh secret list | grep -q "$key"; then
+              if gh secret list | grep -q "^$key"; then
                 echo "Updating existing secret: $key"
-                echo -n "$value" | gh secret set "$key"
+                echo -n "$value" | gh secret set "$key" --visibility all
               else
                 echo "Adding new secret: $key"
-                echo -n "$value" | gh secret set "$key"
+                echo -n "$value" | gh secret set "$key" --visibility all
               fi
             fi
           done < "$APP_PROPERTIES_PATH"
