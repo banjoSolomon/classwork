@@ -14,6 +14,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # List files to verify the correct path
+      - name: List files in the repository
+        run: |
+          ls -R
+
       # Install GitHub CLI
       - name: Install GitHub CLI
         run: |
@@ -30,7 +35,7 @@ jobs:
       # Check if the application.properties file exists
       - name: Ensure application.properties file exists
         run: |
-          if [ ! -f "src/main/resources/application.properties" ]; then
+          if [ ! -f "./classwork/src/main/resources/application.properties" ]; then
             echo "Error: application.properties file not found"
             exit 1
           fi
@@ -39,7 +44,7 @@ jobs:
       - name: Extract and Update Secrets from application.properties
         run: |
           # Set the path to the application.properties file
-          APP_PROPERTIES_PATH="src/main/resources/application.properties"
+          APP_PROPERTIES_PATH="./classwork/src/main/resources/application.properties"
 
           # Read the application.properties and extract key-value pairs
           while IFS='=' read -r key value; do
