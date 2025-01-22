@@ -30,8 +30,9 @@ jobs:
       # Update secrets from application.properties
       - name: Update Secrets from application.properties
         env:
-          APP_PROPERTIES_PATH: "./src/main/resources/application.properties" # Update this path
+          APP_PROPERTIES_PATH: "src/main/resources/application.properties" # Corrected the path
         run: |
+          # Ensure the application.properties file exists at the specified path
           if [ ! -f "$APP_PROPERTIES_PATH" ]; then
             echo "Error: application.properties file not found at $APP_PROPERTIES_PATH"
             exit 1
