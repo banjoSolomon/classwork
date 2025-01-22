@@ -32,10 +32,15 @@ jobs:
         run: |
           gh auth status || { echo "Authentication failed"; exit 1; }
 
+      # Ensure we are in the root directory (change directory if necessary)
+      - name: Change to the root directory if needed
+        run: |
+          cd classwork
+
       # Check if the application.properties file exists
       - name: Ensure application.properties file exists
         run: |
-          if [ ! -f "./classwork/src/main/resources/application.properties" ]; then
+          if [ ! -f "src/main/resources/application.properties" ]; then
             echo "Error: application.properties file not found"
             exit 1
           fi
@@ -44,7 +49,7 @@ jobs:
       - name: Extract and Update Secrets from application.properties
         run: |
           # Set the path to the application.properties file
-          APP_PROPERTIES_PATH="./classwork/src/main/resources/application.properties"
+          APP_PROPERTIES_PATH="src/main/resources/application.properties"
 
           # Read the application.properties and extract key-value pairs
           while IFS='=' read -r key value; do
