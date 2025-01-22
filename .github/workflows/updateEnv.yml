@@ -3,7 +3,11 @@ name: Update Environment Variables in GitHub Secrets
 on:
   push:
     branches:
-      - dev  # Adjust to match the relevant branch
+      - dev  # Adjust branch as needed
+
+permissions:
+  contents: read
+  secrets: write  # Ensure the workflow can modify secrets
 
 jobs:
   update-secrets:
@@ -15,41 +19,39 @@ jobs:
         uses: actions/checkout@v3
 
       # Install GitHub CLI
-      - name: Set up GitHub CLI
+      - name: Install GitHub CLI
         run: |
-          sudo apt-get update -y
+          sudo apt-get update
           sudo apt-get install -y gh
-          gh --version
 
       # Authenticate with GitHub CLI
       - name: Authenticate with GitHub CLI
         env:
           GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
         run: |
-          echo "${{ secrets.G_TOKEN }}" | gh auth login --with-token
+          gh auth status || { echo "Authentication failed"; exit 1; }
 
-      # Extract and update environment variables from application.properties
+      # Update secrets from application.properties
       - name: Update Secrets from application.properties
         env:
-          APP_PROPERTIES_PATH: "./src/main/resources/application.properties" # Adjust this path
+          APP_PROPERTIES_PATH: "./src/main/resources/application.properties" # Update this path
         run: |
-          # Check if application.properties exists
           if [ ! -f "$APP_PROPERTIES_PATH" ]; then
             echo "Error: application.properties file not found at $APP_PROPERTIES_PATH"
             exit 1
           fi
 
-          # Process each line in the properties file
+          # Read and process variables from application.properties
           while IFS='=' read -r key value; do
-            # Skip empty lines and comments
-            if [[ -n "$key" && -n "$value" && $key != \#* ]]; then
+            # Skip empty lines or comments
+            if [ -n "$key" ] && [ -n "$value" ] && [[ $key != \#* ]]; then
               # Check if the secret already exists
-              if gh secret list | grep -q "^$key"; then
+              if gh secret list | grep -q "$key"; then
                 echo "Updating existing secret: $key"
-                echo -n "$value" | gh secret set "$key" --visibility all
+                echo -n "$value" | gh secret set "$key"
               else
                 echo "Adding new secret: $key"
-                echo -n "$value" | gh secret set "$key" --visibility all
+                echo -n "$value" | gh secret set "$key"
               fi
             fi
           done < "$APP_PROPERTIES_PATH"
