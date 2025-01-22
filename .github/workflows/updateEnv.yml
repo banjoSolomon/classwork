@@ -5,13 +5,13 @@ on:
     branches:
       - dev  # Adjust branch as needed
 
+permissions:  # Correct placement of permissions field
+  contents: read
+  secrets: write  # Ensure the workflow can modify secrets
+
 jobs:
   update-secrets:
     runs-on: ubuntu-latest
-
-    permissions:  # Moved permissions inside the job
-      contents: read
-      secrets: write
 
     steps:
       # Checkout the repository
