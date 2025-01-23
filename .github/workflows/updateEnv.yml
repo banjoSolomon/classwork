@@ -1,4 +1,4 @@
-name: Update Environment Variables in GitHub Secrets
+name: Upload and Process application.properties
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - dev  # Adjust branch as needed
 
 jobs:
-  update-secrets:
+  handle-properties:
     runs-on: ubuntu-latest
 
     steps:
@@ -14,10 +14,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # List files to verify the correct path
-      - name: List files in the repository
+      # Ensure the application.properties file exists
+      - name: Verify application.properties exists
         run: |
-          ls -R
+          if [ ! -f "src/main/resources/application.properties" ]; then
+            echo "Error: application.properties not found!"
+            exit 1
+          fi
+
+      # Upload the application.properties file as an artifact
+      - name: Upload application.properties artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-properties
+          path: src/main/resources/application.properties
+
+      # Download the artifact (to simulate a multi-step process)
+      - name: Download application.properties artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: app-properties
 
       # Install GitHub CLI
       - name: Install GitHub CLI
@@ -28,38 +44,23 @@ jobs:
       # Authenticate with GitHub CLI
       - name: Authenticate with GitHub CLI
         env:
-          GITHUB_TOKEN: ${{ secrets.G_TOKEN }}  # Ensure that G_TOKEN secret is available
+          GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
         run: |
           gh auth status || { echo "Authentication failed"; exit 1; }
 
-      # Ensure we are in the root directory (change directory if necessary)
-      - name: Change to the root directory if needed
-        run: |
-          cd classwork
-
-      # Check if the application.properties file exists
-      - name: Ensure application.properties file exists
-        run: |
-          if [ ! -f "src/main/resources/application.properties" ]; then
-            echo "Error: application.properties file not found"
-            exit 1
-          fi
-
-      # Extract variables from application.properties and update GitHub secrets
+      # Process application.properties and update GitHub secrets
       - name: Extract and Update Secrets from application.properties
         run: |
-          # Set the path to the application.properties file
-          APP_PROPERTIES_PATH="src/main/resources/application.properties"
+          APP_PROPERTIES_PATH="application.properties"
 
-          # Read the application.properties and extract key-value pairs
+          # Read the application.properties file and extract key-value pairs
           while IFS='=' read -r key value; do
             # Skip empty lines or comments
             if [ -n "$key" ] && [ -n "$value" ] && [[ $key != \#* ]]; then
-              # Strip leading/trailing whitespace
-              key=$(echo "$key" | xargs)
-              value=$(echo "$value" | xargs)
+              key=$(echo "$key" | xargs)  # Trim whitespace
+              value=$(echo "$value" | xargs)  # Trim whitespace
 
-              # Update the secret in GitHub (using GitHub CLI)
+              # Use GitHub CLI to update secrets
               echo "Updating secret: $key"
               echo -n "$value" | gh secret set "$key"
             fi
