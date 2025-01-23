@@ -51,7 +51,7 @@ jobs:
       # Process application.properties and update GitHub secrets
       - name: Extract and Update Secrets from application.properties
         run: |
-          APP_PROPERTIES_PATH="application.properties"
+          APP_PROPERTIES_PATH="src/main/resources/application.properties"  # Updated path
 
           # Read the application.properties file and extract key-value pairs
           while IFS='=' read -r key value; do
