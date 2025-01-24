@@ -17,6 +17,7 @@ public class ClientServiceTest {
     @Test
     public void testRegister(){
         RegisterClientRequest registerClientRequest = new RegisterClientRequest();
+
         registerClientRequest.setUsername("username");
         registerClientRequest.setPassword("password");
         RegisterClientResponse response = clientService.registerClient(registerClientRequest);
