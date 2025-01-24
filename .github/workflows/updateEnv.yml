@@ -19,24 +19,25 @@ jobs:
       - name: Install GitHub CLI
         run: sudo apt-get install gh -y
 
-      # Step 3: Decode the application.properties file
+      # Step 3: Decode application.properties
       - name: Decode application.properties
         env:
           APP_PROPERTIES_B64: ${{ secrets.APPLICATION_PROPERTIES }}
         run: |
           echo "$APP_PROPERTIES_B64" | base64 -d > application.properties
+          echo "Decoded application.properties:"
+          cat application.properties
 
-      # Step 4: Validate and update GitHub Secrets
+      # Step 4: Validate and Update GitHub Secrets
       - name: Update GitHub Secrets
         env:
           GH_TOKEN: ${{ secrets.G_TOKEN }}
         run: |
           # Fetch existing secrets
           existing_secrets=$(gh secret list --visibility all --json name | jq -r '.[].name')
-
           echo "Existing secrets: $existing_secrets"
 
-          # Loop through the decoded application.properties file
+          # Loop through the application.properties file
           while IFS= read -r line; do
             # Skip empty lines or comments
             [[ -z "$line" || "$line" == \#* ]] && continue
@@ -68,9 +69,3 @@ jobs:
           # Print the final list of updated secrets
           echo "Updated secrets:"
           gh secret list --visibility all --json name | jq -r '.[].name'
-
-      # Debugging Step (Optional): Print application.properties content
-      - name: Debug application.properties
-        run: |
-          echo "Decoded application.properties:"
-          cat application.properties
