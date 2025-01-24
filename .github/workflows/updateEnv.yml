@@ -19,7 +19,7 @@ jobs:
       - name: Install GitHub CLI
         run: sudo apt-get install gh -y
 
-      # Step 3: Decode the application.properties
+      # Step 3: Decode application.properties
       - name: Decode application.properties
         env:
           APP_PROPERTIES_B64: ${{ secrets.APPLICATION_PROPERTIES }}
@@ -60,6 +60,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.G_TOKEN }}
         run: |
+          # Authenticate GitHub CLI
+          gh auth login --with-token <<< $GH_TOKEN
+
           # Fetch existing secrets
           existing_secrets=$(gh secret list --visibility all --json name | jq -r '.[].name')
           echo "Existing secrets: $existing_secrets"
@@ -109,3 +112,7 @@ jobs:
           echo "Existing secrets list:"
           gh secret list --visibility all --json name | jq -r '.[].name'
 
+      # Step 9: Test GitHub CLI authentication (Optional)
+      - name: Test GitHub CLI authentication
+        run: |
+          gh auth status
