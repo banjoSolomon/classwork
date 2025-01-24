@@ -22,6 +22,7 @@ public class ClientServiceTest {
         registerClientRequest.setPassword("password");
         RegisterClientResponse response = clientService.registerClient(registerClientRequest);
         assertNotNull(response);
+
         assertEquals("username", response.getUsername());
         assertNotNull(response.getClientId());
         assertEquals("User successfully registered", response.getMessage());
