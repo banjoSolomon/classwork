@@ -24,93 +24,96 @@ jobs:
         env:
           APP_PROPERTIES_B64: ${{ secrets.APPLICATION_PROPERTIES }}
         run: |
-          echo "$APP_PROPERTIES_B64" | base64 -d > application.properties
-          echo "Decoded application.properties:"
-          cat application.properties
+          echo "$APP_PROPERTIES_B64" | base64 -d > application.properties  
+          echo "Decoded application.properties:"  
+          cat application.properties  
 
       # Step 4: Re-encode application.properties (if updated)
       - name: Re-encode application.properties (if updated)
         run: |
-          base64 application.properties > encoded.properties
-          echo "Re-encoded application.properties to check for updates"
-          cat encoded.properties
+          base64 application.properties > encoded.properties  
+          echo "Re-encoded application.properties to check for updates"  
+          cat encoded.properties  
 
       # Step 5: Compare the newly encoded application.properties with the previous one
       - name: Compare encoded properties and update if new
         id: compare
         run: |
-          if [[ -f "encoded.properties" && -f "previous_encoded.properties" ]]; then
-            echo "Both encoded files exist, performing diff check..."
-            diff encoded.properties previous_encoded.properties
-            if diff encoded.properties previous_encoded.properties > /dev/null; then
-              echo "No changes detected, skipping update."
-              echo "no_changes=true" >> $GITHUB_ENV
-            else
-              echo "Changes detected, updating secrets."
-              echo "changes_detected=true" >> $GITHUB_ENV
-            fi
-          else
-            echo "One or both encoded files are missing. Proceeding with update."
-            echo "changes_detected=true" >> $GITHUB_ENV
-          fi
+          if [[ -f "encoded.properties" && -f "previous_encoded.properties" ]]; then  
+            echo "Both encoded files exist, performing diff check..."  
+            diff encoded.properties previous_encoded.properties  
+            if diff encoded.properties previous_encoded.properties > /dev/null; then  
+              echo "No changes detected, skipping update."  
+              echo "no_changes=true" >> $GITHUB_ENV  
+            else  
+              echo "Changes detected, updating secrets."  
+              echo "changes_detected=true" >> $GITHUB_ENV  
+            fi  
+          else  
+            echo "One or both encoded files are missing. Proceeding with update."  
+            echo "changes_detected=true" >> $GITHUB_ENV  
+          fi  
 
       # Step 6: Update GitHub Secrets only if changes were detected
       - name: Update GitHub Secrets
         if: env.changes_detected == 'true'
         env:
-          GH_TOKEN: ${{ secrets.G_TOKEN }}
+          GH_TOKEN: ${{ secrets.G_TOKEN }}  # Still passing GH_TOKEN for using it in the session
         run: |
-          # Authenticate GitHub CLI
-          gh auth login --with-token <<< $GH_TOKEN
+          # Clear GH_TOKEN from the environment before authentication  
+          unset GH_TOKEN  
 
-          # Fetch existing secrets
-          existing_secrets=$(gh secret list --visibility all --json name | jq -r '.[].name')
-          echo "Existing secrets: $existing_secrets"
+          # Authenticate GitHub CLI  
+          gh auth login --with-token <<< "${{ secrets.G_TOKEN }}"  
 
-          # Loop through the application.properties file
-          while IFS= read -r line; do
-            # Skip empty lines or comments
-            [[ -z "$line" || "$line" == \#* ]] && continue
+          # Fetch existing secrets  
+          existing_secrets=$(gh secret list --visibility all --json name | jq -r '.[].name')  
+          echo "Existing secrets: $existing_secrets"  
 
-            # Validate key=value format
-            if [[ "$line" =~ = ]]; then
-              # Extract the key and value
-              key=$(echo "$line" | cut -d'=' -f1 | tr '.-' '__' | xargs)  # Replace invalid characters and trim spaces
-              value=$(echo "$line" | cut -d'=' -f2- | xargs)             # Trim spaces
+          # Loop through the application.properties file  
+          while IFS= read -r line; do  
+              # Skip empty lines or comments  
+              [[ -z "$line" || "$line" == \#* ]] && continue  
 
-              # Check if the key format is valid
-              if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-                # Check if the secret already exists
-                if echo "$existing_secrets" | grep -q "^$key$"; then
-                  echo "Updating existing secret: $key"
-                else
-                  echo "Adding new secret: $key"
-                fi
-                # Add or update the secret
-                echo "$value" | gh secret set "$key"
-              else
-                echo "Skipping invalid key format: $key"
-              fi
-            else
-              echo "Skipping invalid line: $line"
-            fi
-          done < application.properties
+              # Validate key=value format  
+              if [[ "$line" =~ = ]]; then  
+                  # Extract the key and value  
+                  key=$(echo "$line" | cut -d'=' -f1 | tr '.-' '__' | xargs)  # Replace invalid characters and trim spaces  
+                  value=$(echo "$line" | cut -d'=' -f2- | xargs)             # Trim spaces  
 
-          # Print the final list of updated secrets
-          echo "Updated secrets:"
-          gh secret list --visibility all --json name | jq -r '.[].name'
+                  # Check if the key format is valid  
+                  if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then  
+                      # Check if the secret already exists  
+                      if echo "$existing_secrets" | grep -q "^$key$"; then  
+                          echo "Updating existing secret: $key"  
+                      else  
+                          echo "Adding new secret: $key"  
+                      fi  
+                      # Add or update the secret  
+                      echo "$value" | gh secret set "$key"  
+                  else  
+                      echo "Skipping invalid key format: $key"  
+                  fi  
+              else  
+                  echo "Skipping invalid line: $line"  
+              fi  
+          done < application.properties  
+
+          # Print the final list of updated secrets  
+          echo "Updated secrets:"  
+          gh secret list --visibility all --json name | jq -r '.[].name'  
 
       # Step 7: Debugging Step (Optional): Print application.properties content
       - name: Debug application.properties
         run: |
-          echo "Decoded application.properties:"
-          cat application.properties
+          echo "Decoded application.properties:"  
+          cat application.properties  
 
       # Step 8: Debugging Step: Print existing secrets for verification
       - name: Debug existing secrets
         run: |
-          echo "Existing secrets list:"
-          gh secret list --visibility all --json name | jq -r '.[].name'
+          echo "Existing secrets list:"  
+          gh secret list --visibility all --json name | jq -r '.[].name'  
 
       # Step 9: Test GitHub CLI authentication (Optional)
       - name: Test GitHub CLI authentication
