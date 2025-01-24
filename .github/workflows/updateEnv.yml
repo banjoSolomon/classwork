@@ -61,7 +61,7 @@ jobs:
           GH_TOKEN: ${{ secrets.G_TOKEN }}
         run: |
           # Authenticate GitHub CLI
-          gh auth login --with-token <<< $GH_TOKEN
+          echo "${GH_TOKEN}" | gh auth login --with-token
 
           # Fetch existing secrets
           existing_secrets=$(gh secret list --visibility all --json name | jq -r '.[].name')
