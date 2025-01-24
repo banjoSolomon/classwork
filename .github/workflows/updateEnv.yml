@@ -24,6 +24,8 @@ jobs:
           echo "$APP_PROPERTIES_B64" | base64 -d > application.properties
 
       - name: Update GitHub Secrets
+        env:
+          GH_TOKEN: ${{ secrets.G_TOKEN }}
         run: |
           while IFS= read -r line; do
             [[ -z "$line" || "$line" == \#* ]] && continue
