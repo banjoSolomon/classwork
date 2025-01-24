@@ -28,7 +28,7 @@ jobs:
           echo "Decoded application.properties:"
           cat application.properties
 
-      # Step 4: Encode the application.properties again to check for updates
+      # Step 4: Re-encode application.properties (if updated)
       - name: Re-encode application.properties (if updated)
         run: |
           base64 application.properties > encoded.properties
