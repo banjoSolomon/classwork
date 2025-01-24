@@ -19,7 +19,7 @@ jobs:
       - name: Install GitHub CLI
         run: sudo apt-get install gh -y
 
-      # Step 3: Decode application.properties
+      # Step 3: Decode the application.properties
       - name: Decode application.properties
         env:
           APP_PROPERTIES_B64: ${{ secrets.APPLICATION_PROPERTIES }}
@@ -28,8 +28,33 @@ jobs:
           echo "Decoded application.properties:"
           cat application.properties
 
-      # Step 4: Validate and Update GitHub Secrets
+      # Step 4: Encode the application.properties again to check for updates
+      - name: Re-encode application.properties (if updated)
+        run: |
+          base64 application.properties > encoded.properties
+          echo "Re-encoded application.properties to check for updates"
+          cat encoded.properties
+
+      # Step 5: Compare the newly encoded application.properties with the previous one
+      - name: Compare encoded properties and update if new
+        id: compare
+        run: |
+          if [[ -f "encoded.properties" && -f "previous_encoded.properties" ]]; then
+            if diff encoded.properties previous_encoded.properties > /dev/null; then
+              echo "No changes detected, skipping update."
+              echo "no_changes=true" >> $GITHUB_ENV
+            else
+              echo "Changes detected, updating secrets."
+              echo "changes_detected=true" >> $GITHUB_ENV
+            fi
+          else
+            echo "First run or missing previous encoded properties. Proceeding with update."
+            echo "changes_detected=true" >> $GITHUB_ENV
+          fi
+
+      # Step 6: Update GitHub Secrets only if changes were detected
       - name: Update GitHub Secrets
+        if: env.changes_detected == 'true'
         env:
           GH_TOKEN: ${{ secrets.G_TOKEN }}
         run: |
@@ -69,3 +94,9 @@ jobs:
           # Print the final list of updated secrets
           echo "Updated secrets:"
           gh secret list --visibility all --json name | jq -r '.[].name'
+
+      # Debugging Step (Optional): Print application.properties content
+      - name: Debug application.properties
+        run: |
+          echo "Decoded application.properties:"
+          cat application.properties
