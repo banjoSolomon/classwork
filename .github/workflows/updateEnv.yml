@@ -29,7 +29,14 @@ jobs:
         run: |
           while IFS= read -r line; do
             [[ -z "$line" || "$line" == \#* ]] && continue
-            key=$(echo "$line" | cut -d'=' -f1 | tr '.-' '__')  # Replace '.' and '-' with '_'
+            key=$(echo "$line" | cut -d'=' -f1)
             value=$(echo "$line" | cut -d'=' -f2-)
-            echo "$value" | gh secret set "$key"
+
+            # Validate key format
+            if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+              echo "Setting secret: $key"
+              echo "$value" | gh secret set "$key"
+            else
+              echo "Skipping invalid key: $key"
+            fi
           done < application.properties
