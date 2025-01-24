@@ -40,6 +40,8 @@ jobs:
         id: compare
         run: |
           if [[ -f "encoded.properties" && -f "previous_encoded.properties" ]]; then
+            echo "Both encoded files exist, performing diff check..."
+            diff encoded.properties previous_encoded.properties
             if diff encoded.properties previous_encoded.properties > /dev/null; then
               echo "No changes detected, skipping update."
               echo "no_changes=true" >> $GITHUB_ENV
@@ -48,7 +50,7 @@ jobs:
               echo "changes_detected=true" >> $GITHUB_ENV
             fi
           else
-            echo "First run or missing previous encoded properties. Proceeding with update."
+            echo "One or both encoded files are missing. Proceeding with update."
             echo "changes_detected=true" >> $GITHUB_ENV
           fi
 
@@ -95,8 +97,15 @@ jobs:
           echo "Updated secrets:"
           gh secret list --visibility all --json name | jq -r '.[].name'
 
-      # Debugging Step (Optional): Print application.properties content
+      # Step 7: Debugging Step (Optional): Print application.properties content
       - name: Debug application.properties
         run: |
           echo "Decoded application.properties:"
           cat application.properties
+
+      # Step 8: Debugging Step: Print existing secrets for verification
+      - name: Debug existing secrets
+        run: |
+          echo "Existing secrets list:"
+          gh secret list --visibility all --json name | jq -r '.[].name'
+
