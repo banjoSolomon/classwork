@@ -30,15 +30,17 @@ jobs:
           # Fetch existing secrets
           existing_secrets=$(gh secret list --visibility all --json name | jq -r '.[].name')
 
+          # Loop through application.properties
           while IFS= read -r line; do
             [[ -z "$line" || "$line" == \#* ]] && continue
-          
+
             # Extract the key and value
             key=$(echo "$line" | cut -d'=' -f1 | tr '.-' '__')  # Replace invalid characters
             value=$(echo "$line" | cut -d'=' -f2-)
-          
+
             # Validate key format
             if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+              # Check if the key exists and update/add accordingly
               if echo "$existing_secrets" | grep -q "^$key$"; then
                 echo "Updating existing secret: $key"
               else
@@ -49,3 +51,7 @@ jobs:
               echo "Skipping invalid key: $key"
             fi
           done < application.properties
+
+          # Print all updated and newly added secrets
+          echo "Updated secrets:"
+          gh secret list --visibility all --json name | jq -r '.[].name'
