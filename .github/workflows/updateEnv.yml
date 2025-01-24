@@ -11,45 +11,66 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Step 2: Install GitHub CLI
       - name: Install GitHub CLI
         run: sudo apt-get install gh -y
 
+      # Step 3: Decode the application.properties file
       - name: Decode application.properties
         env:
           APP_PROPERTIES_B64: ${{ secrets.APPLICATION_PROPERTIES }}
         run: |
-          echo "Decoding application.properties..."
           echo "$APP_PROPERTIES_B64" | base64 -d > application.properties
-          cat application.properties  # Debug output to verify decoding
 
+      # Step 4: Validate and update GitHub Secrets
       - name: Update GitHub Secrets
         env:
           GH_TOKEN: ${{ secrets.G_TOKEN }}
         run: |
-          echo "Fetching existing secrets..."
+          # Fetch existing secrets
           existing_secrets=$(gh secret list --visibility all --json name | jq -r '.[].name')
 
-          echo "Processing application.properties..."
+          echo "Existing secrets: $existing_secrets"
+
+          # Loop through the decoded application.properties file
           while IFS= read -r line; do
+            # Skip empty lines or comments
             [[ -z "$line" || "$line" == \#* ]] && continue
 
-            key=$(echo "$line" | cut -d'=' -f1 | tr '.-' '__')
-            value=$(echo "$line" | cut -d'=' -f2-)
+            # Validate key=value format
+            if [[ "$line" =~ = ]]; then
+              # Extract the key and value
+              key=$(echo "$line" | cut -d'=' -f1 | tr '.-' '__' | xargs)  # Replace invalid characters and trim spaces
+              value=$(echo "$line" | cut -d'=' -f2- | xargs)             # Trim spaces
 
-            if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-              if echo "$existing_secrets" | grep -q "^$key$"; then
-                echo "Updating existing secret: $key"
+              # Check if the key format is valid
+              if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+                # Check if the secret already exists
+                if echo "$existing_secrets" | grep -q "^$key$"; then
+                  echo "Updating existing secret: $key"
+                else
+                  echo "Adding new secret: $key"
+                fi
+                # Add or update the secret
+                echo "$value" | gh secret set "$key"
               else
-                echo "Adding new secret: $key"
+                echo "Skipping invalid key format: $key"
               fi
-              echo "$value" | gh secret set "$key"
             else
-              echo "Skipping invalid key: $key"
+              echo "Skipping invalid line: $line"
             fi
           done < application.properties
 
+          # Print the final list of updated secrets
           echo "Updated secrets:"
           gh secret list --visibility all --json name | jq -r '.[].name'
+
+      # Debugging Step (Optional): Print application.properties content
+      - name: Debug application.properties
+        run: |
+          echo "Decoded application.properties:"
+          cat application.properties
