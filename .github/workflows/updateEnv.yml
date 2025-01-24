@@ -21,26 +21,25 @@ jobs:
         env:
           APP_PROPERTIES_B64: ${{ secrets.APPLICATION_PROPERTIES }}
         run: |
+          echo "Decoding application.properties..."
           echo "$APP_PROPERTIES_B64" | base64 -d > application.properties
+          cat application.properties  # Debug output to verify decoding
 
       - name: Update GitHub Secrets
         env:
           GH_TOKEN: ${{ secrets.G_TOKEN }}
         run: |
-          # Fetch existing secrets
+          echo "Fetching existing secrets..."
           existing_secrets=$(gh secret list --visibility all --json name | jq -r '.[].name')
 
-          # Loop through application.properties
+          echo "Processing application.properties..."
           while IFS= read -r line; do
             [[ -z "$line" || "$line" == \#* ]] && continue
 
-            # Extract the key and value
-            key=$(echo "$line" | cut -d'=' -f1 | tr '.-' '__')  # Replace invalid characters
+            key=$(echo "$line" | cut -d'=' -f1 | tr '.-' '__')
             value=$(echo "$line" | cut -d'=' -f2-)
 
-            # Validate key format
             if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-              # Check if the key exists and update/add accordingly
               if echo "$existing_secrets" | grep -q "^$key$"; then
                 echo "Updating existing secret: $key"
               else
@@ -52,6 +51,5 @@ jobs:
             fi
           done < application.properties
 
-          # Print all updated and newly added secrets
           echo "Updated secrets:"
           gh secret list --visibility all --json name | jq -r '.[].name'
