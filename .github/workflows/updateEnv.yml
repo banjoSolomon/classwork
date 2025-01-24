@@ -1,67 +1,33 @@
-name: Upload and Process application.properties
+name: Update Secrets
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - dev  # Adjust branch as needed
+    paths-ignore:
+      - ".gitignore"
 
 jobs:
-  handle-properties:
+  update-secrets:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Ensure the application.properties file exists
-      - name: Verify application.properties exists
-        run: |
-          if [ ! -f "src/main/resources/application.properties" ]; then
-            echo "Error: application.properties not found!"
-            exit 1
-          fi
-
-      # Upload the application.properties file as an artifact
-      - name: Upload application.properties artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: app-properties
-          path: src/main/resources/application.properties
-
-      # Download the artifact (to simulate a multi-step process)
-      - name: Download application.properties artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: app-properties
-
-      # Install GitHub CLI
       - name: Install GitHub CLI
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gh
+        run: sudo apt-get install gh -y
 
-      # Authenticate with GitHub CLI
-      - name: Authenticate with GitHub CLI
+      - name: Decode application.properties
         env:
-          GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
+          APP_PROPERTIES_B64: ${{ secrets.APPLICATION_PROPERTIES }}
         run: |
-          gh auth status || { echo "Authentication failed"; exit 1; }
+          echo "$APP_PROPERTIES_B64" | base64 -d > application.properties
 
-      # Process application.properties and update GitHub secrets
-      - name: Extract and Update Secrets from application.properties
+      - name: Update GitHub Secrets
         run: |
-          APP_PROPERTIES_PATH="src/main/resources/application.properties"  # Updated path
-
-          # Read the application.properties file and extract key-value pairs
-          while IFS='=' read -r key value; do
-            # Skip empty lines or comments
-            if [ -n "$key" ] && [ -n "$value" ] && [[ $key != \#* ]]; then
-              key=$(echo "$key" | xargs)  # Trim whitespace
-              value=$(echo "$value" | xargs)  # Trim whitespace
-
-              # Use GitHub CLI to update secrets
-              echo "Updating secret: $key"
-              echo -n "$value" | gh secret set "$key"
-            fi
-          done < "$APP_PROPERTIES_PATH"
+          while IFS= read -r line; do
+            [[ -z "$line" || "$line" == \#* ]] && continue
+            key=$(echo "$line" | cut -d'=' -f1)
+            value=$(echo "$line" | cut -d'=' -f2-)
+            echo "$value" | gh secret set "$key"
+          done < application.properties
